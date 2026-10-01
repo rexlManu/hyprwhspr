@@ -37,8 +37,8 @@ class PillTranscriptConfig:
     enter_seconds: float = 0.20
     exit_seconds: float = 0.20
     stagger_seconds: float = 0.028
-    font_family: str = "sans-serif"
-    font_size: float = 17.0
+    font_family: str = "SF Pro"
+    font_size: float = 13.0
     offset_y: float = 7.0
     rise_px: float = 9.0
     max_width: float = 320.0

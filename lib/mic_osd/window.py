@@ -73,8 +73,6 @@ class OSDWindow(Gtk.Window):
                     + self._pill_transcript_config.offset_y
                     + 16
                 ),
-                # Must clear the pill's own preview-mode threshold.
-                getattr(self.visualization, 'PREVIEW_HEIGHT_THRESHOLD', 76) + 1,
             )
             width = max(
                 width,
@@ -117,8 +115,12 @@ class OSDWindow(Gtk.Window):
         Gtk4LayerShell.set_anchor(self, Gtk4LayerShell.Edge.RIGHT, False)
         Gtk4LayerShell.set_anchor(self, Gtk4LayerShell.Edge.TOP, False)
         
-        # Margin from bottom
-        Gtk4LayerShell.set_margin(self, Gtk4LayerShell.Edge.BOTTOM, 130)
+        # Margin from bottom; a visualization can sit closer to the edge
+        Gtk4LayerShell.set_margin(
+            self,
+            Gtk4LayerShell.Edge.BOTTOM,
+            getattr(self.visualization, 'BOTTOM_MARGIN', 130),
+        )
         
         # Don't reserve exclusive space
         Gtk4LayerShell.set_exclusive_zone(self, -1)
@@ -177,7 +179,9 @@ class OSDWindow(Gtk.Window):
             samples: Raw audio samples (optional)
         """
         self.visualization.update(level, samples)
-        self.drawing_area.queue_draw()
+        # Static states let the surface rest instead of repainting at 60 FPS.
+        if getattr(self.visualization, 'needs_redraw', True):
+            self.drawing_area.queue_draw()
 
     def set_preview_text(self, text: str):
         """Set compact transcript preview text."""
@@ -320,7 +324,7 @@ class OSDWindow(Gtk.Window):
             # A restrained shadow keeps white text readable over bright windows
             # without introducing a visible badge or background rectangle.
             cr.set_source_rgba(0.0, 0.0, 0.0, 0.55 * word.alpha)
-            cr.move_to(x, y + 2.0)
+            cr.move_to(x, y + 1.0)
             cr.show_text(text)
 
             cr.set_source_rgba(1.0, 1.0, 1.0, 0.97 * word.alpha)

@@ -72,26 +72,36 @@ class PillVisualizationTests(unittest.TestCase):
         visualization.update(0.04, np.full(13, 0.0108))
         self.assertGreater(float(np.max(visualization.bar_heights)), 0.2)
 
-    def test_processing_state_generates_animated_wave(self):
+    def test_processing_state_settles_flat_and_stops_redrawing(self):
         visualization = self.PillVisualization()
+        visualization.bar_heights[:] = 0.8
         visualization.set_state("processing")
-        self._advance(visualization)
-        visualization.update(0.0, np.zeros(13))
+        for _ in range(60):
+            self._advance(visualization)
+            visualization.update(0.5, np.full(13, 0.5))
         self.assertEqual(
             visualization.state_manager.current_state,
             self.VisualizerState.PROCESSING,
         )
-        self.assertGreater(float(np.ptp(visualization.bar_heights)), 0.01)
+        self.assertLess(float(np.max(visualization.bar_heights)), 0.01)
+        self.assertFalse(visualization.needs_redraw)
+
+    def test_recording_always_redraws(self):
+        visualization = self.PillVisualization()
+        self._advance(visualization)
+        visualization.update(0.0, np.zeros(13))
+        self.assertTrue(visualization.needs_redraw)
 
     def test_compact_style_exposes_pill_transcript_preview(self):
         visualization = self.PillVisualization()
         self.assertTrue(visualization.show_preview)
         self.assertEqual(visualization.preview_mode, "pill")
 
-    def test_tall_surface_keeps_pill_at_bottom(self):
+    def test_pill_sits_at_surface_bottom(self):
         visualization = self.PillVisualization()
-        _, y, _, pill_height = visualization._pill_geometry(400, 84)
-        self.assertEqual(y, 84 - pill_height - 4)
+        for height in (68, 84):
+            _, y, _, pill_height = visualization._pill_geometry(400, height)
+            self.assertEqual(y, height - pill_height - 4)
 
     def test_registry_exposes_the_pill_style(self):
         module = importlib.import_module("mic_osd.visualizations")
